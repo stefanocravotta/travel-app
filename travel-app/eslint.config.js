@@ -20,6 +20,14 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // shadcn/ui generated components export helpers alongside components
+    // (e.g. `buttonVariants`); that's by design, so skip the fast-refresh rule.
+    files: ['src/components/ui/**/*.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
   // Must stay last: turns off ESLint rules that conflict with Prettier formatting.
   eslintConfigPrettier,
 ])

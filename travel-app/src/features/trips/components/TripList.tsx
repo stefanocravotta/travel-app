@@ -1,31 +1,15 @@
+import { Link } from 'react-router'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { formatBudget, formatDateRange } from '@/features/trips/format'
 // `import type` importa solo il tipo, che sparisce dal JS compilato.
 // È obbligatorio qui perché il tsconfig ha `verbatimModuleSyntax: true`.
-import type { Trip } from '../../../types/trip'
-
-// --- Helper di formattazione ---
-// Sono funzioni pure fuori dal componente: in React il corpo del componente
-// viene rieseguito a ogni render, quindi tutto ciò che non dipende da props o
-// stato conviene tenerlo a livello di modulo (come una utility function
-// importata in Angular, o la logica di una pure pipe tipo `date`/`currency`).
-
-const dateFormatter = new Intl.DateTimeFormat('it-IT', {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-  // `new Date('2026-05-10')` viene interpretata come mezzanotte UTC: formattando
-  // in UTC evitiamo che in un fuso orario negativo la data slitti di un giorno.
-  timeZone: 'UTC',
-})
-
-const currencyFormatter = new Intl.NumberFormat('it-IT', {
-  style: 'currency',
-  currency: 'EUR',
-  maximumFractionDigits: 0,
-})
-
-function formatDateRange(startDate: string, endDate: string): string {
-  return `${dateFormatter.format(new Date(startDate))} – ${dateFormatter.format(new Date(endDate))}`
-}
+import type { Trip } from '@/types/trip'
 
 // --- Props ---
 // Le props sono gli input del componente: l'equivalente di `@Input()` o di
@@ -52,7 +36,7 @@ export function TripList({ trips }: TripListProps) {
   // (o a `*ngIf="…; else empty"`).
   if (trips.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed border-gray-300 p-6 text-center text-gray-500">
+      <p className="rounded-xl border border-dashed p-6 text-center text-muted-foreground">
         Nessun viaggio ancora. Aggiungine uno per iniziare!
       </p>
     )
@@ -69,31 +53,52 @@ export function TripList({ trips }: TripListProps) {
         o a `*ngFor`. La prop `key` ha lo stesso ruolo di `track`/`trackBy`:
         permette a React di riconoscere ogni elemento tra un render e l'altro.
         Deve essere stabile e unica, quindi usiamo l'id e non l'indice.
+        La `key` va sull'elemento più esterno restituito dal `map` (qui `<li>`).
       */}
       {trips.map((trip) => (
-        <li
-          key={trip.id}
-          className="rounded-lg border border-gray-200 p-4 shadow-sm"
-        >
-          <h2 className="text-xl font-semibold">{trip.destination}</h2>
-          <p className="text-sm text-gray-600">
-            {formatDateRange(trip.startDate, trip.endDate)}
-          </p>
-          <p className="mt-2 font-medium">
-            Budget: {currencyFormatter.format(trip.budget)}
-          </p>
+        <li key={trip.id}>
+          {/*
+            `Card` e i suoi sotto-componenti sono "componenti composti": pezzi
+            separati che si combinano come blocchi HTML (≈ `mat-card` con
+            `mat-card-header`, `mat-card-content` in Angular Material).
+          */}
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="text-lg">
+                {/*
+                  `Link` naviga lato client senza ricaricare la pagina: è
+                  l'equivalente di `routerLink`. Il template literal costruisce
+                  l'URL, come `[routerLink]="['/trips', trip.id]"`.
+                */}
+                <Link
+                  to={`/trips/${trip.id}`}
+                  className="underline-offset-4 hover:underline"
+                >
+                  {trip.destination}
+                </Link>
+              </CardTitle>
+              <CardDescription>
+                {formatDateRange(trip.startDate, trip.endDate)}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+              <p className="font-medium">Budget: {formatBudget(trip.budget)}</p>
 
-          {/* Un `map` annidato: anche qui serve una `key`, l'interesse stesso è unico. */}
-          <ul className="mt-3 flex flex-wrap gap-2">
-            {trip.interests.map((interest) => (
-              <li
-                key={interest}
-                className="rounded-full bg-blue-100 px-3 py-1 text-xs text-blue-800"
-              >
-                {interest}
-              </li>
-            ))}
-          </ul>
+              {/* Un `map` annidato: anche qui serve una `key`, l'interesse stesso è unico. */}
+              {trip.interests.length > 0 && (
+                <ul className="flex flex-wrap gap-2">
+                  {trip.interests.map((interest) => (
+                    <li
+                      key={interest}
+                      className="rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground capitalize"
+                    >
+                      {interest}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
         </li>
       ))}
     </ul>

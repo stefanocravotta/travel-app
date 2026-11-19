@@ -6,8 +6,10 @@ Travel planning app with AI-generated itineraries. Learning project: the develop
 ## Stack
 
 - Vite + React + TypeScript (strict)
-- Tailwind CSS
-- React Router, TanStack Query (to add later)
+- Tailwind CSS v4
+- shadcn/ui (Radix base, `radix-nova` style) — components in `src/components/ui`, theme via CSS variables in `src/index.css` (`:root` light / `.dark` dark), toggled by `ThemeProvider` in `src/components/theme/`
+- React Router v8 (data mode: `createBrowserRouter` in `src/router.ts`; import from `react-router`, `RouterProvider` from `react-router/dom`)
+- TanStack Query (to add later)
 - React Hook Form + Zod (to add later)
 - Vitest + Testing Library, Playwright (to add later)
 - Supabase (auth, Postgres, Edge Functions) — AI calls ONLY from Edge Functions, never expose API keys in the client
@@ -26,6 +28,9 @@ Travel planning app with AI-generated itineraries. Learning project: the develop
 - Custom hooks in `src/hooks/`, named `useXxx`
 - Feature-based folders: `src/features/<feature>/`
 - Shared UI in `src/components/`
+- Import alias `@/` → `src/` (configured in `tsconfig.json`, `tsconfig.app.json` and `vite.config.ts`). Use `@/...` instead of `../` paths; `./` only for files in the same folder.
+- **Use the shadcn components in `src/components/ui` before creating new ones.** If one is missing, add it with `npx shadcn@latest add <name>` instead of writing it by hand; avoid editing generated files unless necessary.
+- Use theme tokens (`bg-background`, `text-muted-foreground`, `text-destructive`, `border`, …) instead of fixed colors (`gray-*`, `blue-*`), so light and dark both work.
 - Types next to the code that uses them; shared types in `src/types/`
 - No `any`. Prefer explicit types for props.
 - Conventional commits (`feat:`, `fix:`, `chore:`, `refactor:`, `test:`)
