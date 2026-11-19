@@ -1,6 +1,8 @@
+import { Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, NavLink, Outlet } from 'react-router'
 import { LanguageSelect } from '@/components/LanguageSelect'
+import { PageLoader } from '@/components/PageLoader'
 import { ModeToggle } from '@/components/theme/ModeToggle'
 import { buttonVariants } from '@/components/ui/button'
 
@@ -53,7 +55,16 @@ export function Layout() {
       </header>
 
       <main className="mx-auto max-w-4xl p-8">
-        <Outlet />
+        {/*
+          Le pagine sono caricate in lazy (vedi router.ts). Mentre il chunk di
+          una pagina arriva, `Suspense` mostra il fallback al posto dell'Outlet;
+          header e navigazione restano visibili. ≈ in Angular il router attende
+          il `loadComponent` prima di attivare la route, oppure `@defer` con un
+          blocco `@loading { … }` per caricare in differita parti di un template.
+        */}
+        <Suspense fallback={<PageLoader />}>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   )

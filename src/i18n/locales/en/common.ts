@@ -2,6 +2,7 @@
 // the other languages (enforced by `satisfies TranslationShape<…>` there).
 export const common = {
   appName: 'Travel App',
+  loading: 'Loading…',
   nav: {
     label: 'Main navigation',
     trips: 'Trips',
