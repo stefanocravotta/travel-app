@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { SubmitEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 // Componenti shadcn/ui: non arrivano da node_modules come Angular Material, ma
 // sono file sorgente copiati in `src/components/ui` dalla CLI (`npx shadcn add`).
 // Sono nostri: si leggono, si modificano, e si importano con l'alias `@/`.
@@ -14,6 +15,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import type { ValidationErrorKey } from '@/i18n/locales/en/trips'
 import { INTERESTS } from '@/types/trip'
 import type { Interest, Trip } from '@/types/trip'
 
@@ -23,6 +25,11 @@ import type { Interest, Trip } from '@/types/trip'
 // è una normale funzione. Più avanti la sostituiremo con React Hook Form + Zod.
 // È una funzione pura fuori dal componente: riceve i valori e restituisce gli
 // errori, quindi si potrà testare con Vitest senza fare il render del componente.
+//
+// Restituisce *chiavi* di traduzione, non testi: la logica resta indipendente
+// dalla lingua e il componente traduce al momento del render. Così un errore
+// già mostrato cambia lingua insieme al resto dell'interfaccia (≈ in Angular,
+// errori come `{ required: true }` tradotti nel template con la pipe).
 
 type FormValues = {
   destination: string
@@ -31,29 +38,29 @@ type FormValues = {
   budget: string
 }
 
-// Un messaggio per ogni campo non valido; i campi validi sono assenti.
-type FormErrors = Partial<Record<keyof FormValues, string>>
+// Una chiave d'errore per ogni campo non valido; i campi validi sono assenti.
+type FormErrors = Partial<Record<keyof FormValues, ValidationErrorKey>>
 
 function validate(values: FormValues): FormErrors {
   const errors: FormErrors = {}
 
   if (values.destination.trim() === '') {
-    errors.destination = 'La destinazione è obbligatoria.'
+    errors.destination = 'destinationRequired'
   }
   if (values.startDate === '') {
-    errors.startDate = 'La data di inizio è obbligatoria.'
+    errors.startDate = 'startDateRequired'
   }
   if (values.endDate === '') {
-    errors.endDate = 'La data di fine è obbligatoria.'
+    errors.endDate = 'endDateRequired'
   } else if (values.startDate !== '' && values.endDate < values.startDate) {
     // Le date ISO `YYYY-MM-DD` si possono confrontare come stringhe:
     // l'ordine alfabetico coincide con quello cronologico.
-    errors.endDate = 'La data di fine non può essere prima di quella di inizio.'
+    errors.endDate = 'endDateBeforeStart'
   }
   // `Number('')` vale 0 e `Number('abc')` vale NaN: in entrambi i casi
   // la condizione `> 0` è falsa, quindi basta un solo controllo.
   if (!(Number(values.budget) > 0)) {
-    errors.budget = 'Il budget deve essere maggiore di 0.'
+    errors.budget = 'budgetPositive'
   }
 
   return errors
@@ -75,6 +82,8 @@ type TripFormProps = {
 }
 
 export function TripForm({ onCreate }: TripFormProps) {
+  const { t } = useTranslation('trips')
+
   // Un `useState` per campo. Sono "input controllati": il valore mostrato
   // dall'input viene sempre dallo stato e ogni battitura aggiorna lo stato con il
   // setter. È l'equivalente di `[(ngModel)]` (o `[value]` + `(input)`), ma
@@ -140,7 +149,7 @@ export function TripForm({ onCreate }: TripFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Dettagli del viaggio</CardTitle>
+        <CardTitle className="text-lg">{t('form.title')}</CardTitle>
       </CardHeader>
 
       {/*
@@ -158,9 +167,10 @@ export function TripForm({ onCreate }: TripFormProps) {
             `aria-describedby` collega l'input al messaggio d'errore.
             I messaggi sono un rendering condizionale con `&&`: se l'espressione a
             sinistra è falsy non viene mostrato nulla (≈ `@if (errors.destination)`).
+            La chiave d'errore viene tradotta qui: `t(\`form.errors.${key}\`)`.
           */}
           <div className={`${fieldClass} sm:col-span-2`}>
-            <Label htmlFor="destination">Destinazione</Label>
+            <Label htmlFor="destination">{t('form.destination')}</Label>
             {/*
               `Input` accetta tutte le props di un `<input>` nativo e le inoltra:
               il pattern "input controllato" resta identico a prima.
@@ -177,13 +187,13 @@ export function TripForm({ onCreate }: TripFormProps) {
             />
             {errors.destination && (
               <p id="destination-error" className={errorClass}>
-                {errors.destination}
+                {t(`form.errors.${errors.destination}`)}
               </p>
             )}
           </div>
 
           <div className={fieldClass}>
-            <Label htmlFor="startDate">Data di inizio</Label>
+            <Label htmlFor="startDate">{t('form.startDate')}</Label>
             <Input
               id="startDate"
               type="date"
@@ -196,13 +206,13 @@ export function TripForm({ onCreate }: TripFormProps) {
             />
             {errors.startDate && (
               <p id="startDate-error" className={errorClass}>
-                {errors.startDate}
+                {t(`form.errors.${errors.startDate}`)}
               </p>
             )}
           </div>
 
           <div className={fieldClass}>
-            <Label htmlFor="endDate">Data di fine</Label>
+            <Label htmlFor="endDate">{t('form.endDate')}</Label>
             <Input
               id="endDate"
               type="date"
@@ -215,13 +225,13 @@ export function TripForm({ onCreate }: TripFormProps) {
             />
             {errors.endDate && (
               <p id="endDate-error" className={errorClass}>
-                {errors.endDate}
+                {t(`form.errors.${errors.endDate}`)}
               </p>
             )}
           </div>
 
           <div className={`${fieldClass} sm:col-span-2`}>
-            <Label htmlFor="budget">Budget (€)</Label>
+            <Label htmlFor="budget">{t('form.budget')}</Label>
             <Input
               id="budget"
               type="number"
@@ -235,7 +245,7 @@ export function TripForm({ onCreate }: TripFormProps) {
             />
             {errors.budget && (
               <p id="budget-error" className={errorClass}>
-                {errors.budget}
+                {t(`form.errors.${errors.budget}`)}
               </p>
             )}
           </div>
@@ -247,7 +257,9 @@ export function TripForm({ onCreate }: TripFormProps) {
             (≈ `@for (interest of interests; track interest)`).
           */}
           <fieldset className="grid gap-3 sm:col-span-2">
-            <legend className="mb-3 text-sm font-medium">Interessi</legend>
+            <legend className="mb-3 text-sm font-medium">
+              {t('form.interests')}
+            </legend>
             <div className="flex flex-wrap gap-x-6 gap-y-3">
               {INTERESTS.map((interest) => {
                 const id = `interest-${interest}`
@@ -268,8 +280,8 @@ export function TripForm({ onCreate }: TripFormProps) {
                         setInterest(interest, checked === true)
                       }
                     />
-                    <Label htmlFor={id} className="font-normal capitalize">
-                      {interest}
+                    <Label htmlFor={id} className="font-normal">
+                      {t(`interests.${interest}`)}
                     </Label>
                   </div>
                 )
@@ -279,7 +291,7 @@ export function TripForm({ onCreate }: TripFormProps) {
         </CardContent>
 
         <CardFooter>
-          <Button type="submit">Aggiungi viaggio</Button>
+          <Button type="submit">{t('form.submit')}</Button>
         </CardFooter>
       </form>
     </Card>

@@ -1,28 +1,55 @@
 // Helper di formattazione condivisi da TripList e TripDetailPage.
-// Sono funzioni pure a livello di modulo: in React il corpo di un componente
-// viene rieseguito a ogni render, quindi tutto ciò che non dipende da props o
-// stato conviene tenerlo fuori (come una utility importata in Angular, o la
-// logica di una pure pipe tipo `date`/`currency`).
+// Sono funzioni pure a livello di modulo, come la logica di una pure pipe
+// Angular (`date`, `currency`), ma ricevono la lingua come parametro: il
+// componente passa quella attiva (`i18n.resolvedLanguage`).
 
-const dateFormatter = new Intl.DateTimeFormat('it-IT', {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-  // `new Date('2026-05-10')` viene interpretata come mezzanotte UTC: formattando
-  // in UTC evitiamo che in un fuso orario negativo la data slitti di un giorno.
-  timeZone: 'UTC',
-})
+// Creare un formatter `Intl` ha un costo: ne teniamo uno per lingua.
+const dateFormatters = new Map<string, Intl.DateTimeFormat>()
+const currencyFormatters = new Map<string, Intl.NumberFormat>()
 
-const currencyFormatter = new Intl.NumberFormat('it-IT', {
-  style: 'currency',
-  currency: 'EUR',
-  maximumFractionDigits: 0,
-})
-
-export function formatDateRange(startDate: string, endDate: string): string {
-  return `${dateFormatter.format(new Date(startDate))} – ${dateFormatter.format(new Date(endDate))}`
+function getDateFormatter(locale: string): Intl.DateTimeFormat {
+  let formatter = dateFormatters.get(locale)
+  if (formatter === undefined) {
+    formatter = new Intl.DateTimeFormat(locale, {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      // `new Date('2026-05-10')` viene interpretata come mezzanotte UTC:
+      // formattando in UTC la data non slitta di un giorno nei fusi negativi.
+      timeZone: 'UTC',
+    })
+    dateFormatters.set(locale, formatter)
+  }
+  return formatter
 }
 
-export function formatBudget(budget: number): string {
-  return currencyFormatter.format(budget)
+function getCurrencyFormatter(locale: string): Intl.NumberFormat {
+  let formatter = currencyFormatters.get(locale)
+  if (formatter === undefined) {
+    formatter = new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: 'EUR',
+      maximumFractionDigits: 0,
+    })
+    currencyFormatters.set(locale, formatter)
+  }
+  return formatter
+}
+
+// `formatRange` unisce le parti in comune secondo le regole della lingua:
+// "10–15 mag 2026" in italiano, "May 10 – 15, 2026" in inglese.
+export function formatDateRange(
+  startDate: string,
+  endDate: string,
+  locale: string,
+): string {
+  return getDateFormatter(locale).formatRange(
+    new Date(startDate),
+    new Date(endDate),
+  )
+}
+
+// "1.500 €" in italiano, "€1,500" in inglese.
+export function formatBudget(budget: number, locale: string): string {
+  return getCurrencyFormatter(locale).format(budget)
 }

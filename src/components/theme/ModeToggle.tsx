@@ -1,10 +1,12 @@
 import { Moon, Sun } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/components/theme/useTheme'
 import { Button } from '@/components/ui/button'
 
 // Alterna tra chiaro e scuro. Se il tema è 'system', il primo click passa
 // all'opposto di quello attualmente visibile.
 export function ModeToggle() {
+  const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
 
   function toggle() {
@@ -18,12 +20,12 @@ export function ModeToggle() {
       size="icon"
       className="relative"
       onClick={toggle}
-      title={`Tema: ${theme}`}
+      title={t('theme.current', { theme: t(`theme.names.${theme}`) })}
     >
       {/* Le icone cambiano solo via CSS con la variante `dark:` di Tailwind. */}
       <Sun className="scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
       <Moon className="absolute scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
-      <span className="sr-only">Cambia tema chiaro/scuro</span>
+      <span className="sr-only">{t('theme.toggle')}</span>
     </Button>
   )
 }

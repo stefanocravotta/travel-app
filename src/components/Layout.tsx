@@ -1,4 +1,6 @@
+import { useTranslation } from 'react-i18next'
 import { Link, NavLink, Outlet } from 'react-router'
+import { LanguageSelect } from '@/components/LanguageSelect'
 import { ModeToggle } from '@/components/theme/ModeToggle'
 import { buttonVariants } from '@/components/ui/button'
 
@@ -15,15 +17,17 @@ function navLinkClass({ isActive }: { isActive: boolean }): string {
 // figlie vengono renderizzate al posto di `<Outlet />`, che è l'equivalente
 // di `<router-outlet>` in Angular.
 export function Layout() {
+  const { t } = useTranslation()
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4 px-8 py-4">
           <Link to="/" className="font-heading text-xl font-semibold">
-            Travel App
+            {t('appName')}
           </Link>
           <div className="flex items-center gap-2">
-            <nav aria-label="Navigazione principale">
+            <nav aria-label={t('nav.label')}>
               <ul className="flex gap-1">
                 <li>
                   {/*
@@ -32,16 +36,17 @@ export function Layout() {
                     NavLink aggiunge anche `aria-current="page"` al link attivo.
                   */}
                   <NavLink to="/" end className={navLinkClass}>
-                    Viaggi
+                    {t('nav.trips')}
                   </NavLink>
                 </li>
                 <li>
                   <NavLink to="/trips/new" className={navLinkClass}>
-                    Nuovo viaggio
+                    {t('nav.newTrip')}
                   </NavLink>
                 </li>
               </ul>
             </nav>
+            <LanguageSelect />
             <ModeToggle />
           </div>
         </div>
