@@ -7,6 +7,8 @@ export const common = {
     label: 'Main navigation',
     trips: 'Trips',
     newTrip: 'New trip',
+    logout: 'Sign out',
+    signedInAs: 'Signed in as {{email}}',
   },
   theme: {
     toggle: 'Toggle light/dark theme',

@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client'
 // collegata a react-dom (usa `flushSync` per gli aggiornamenti del router).
 import { RouterProvider } from 'react-router/dom'
 import { ThemeProvider } from '@/components/theme/ThemeProvider'
+import { AuthProvider } from '@/features/auth/AuthProvider'
 import { TripsProvider } from '@/features/trips/TripsProvider'
 // Inizializza i18next (lingua rilevata + traduzioni) prima del primo render.
 import '@/i18n'
@@ -12,13 +13,17 @@ import { router } from '@/router'
 
 // Punto di avvio, ≈ `bootstrapApplication(AppComponent, { providers: [provideRouter(routes)] })`.
 // I provider avvolgono il router, così tutte le pagine condividono lo stesso
-// tema e lo stesso stato dei viaggi (≈ service `providedIn: 'root'`).
+// tema, la stessa sessione e lo stesso stato dei viaggi (≈ service
+// `providedIn: 'root'`). AuthProvider sta sopra il router perché RequireAuth
+// (una route) e l'header leggono la sessione.
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
-      <TripsProvider>
-        <RouterProvider router={router} />
-      </TripsProvider>
+      <AuthProvider>
+        <TripsProvider>
+          <RouterProvider router={router} />
+        </TripsProvider>
+      </AuthProvider>
     </ThemeProvider>
   </StrictMode>,
 )
