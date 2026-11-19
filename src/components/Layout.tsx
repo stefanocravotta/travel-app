@@ -1,10 +1,12 @@
 import { Suspense } from 'react'
+import { LogOut } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, NavLink, Outlet } from 'react-router'
 import { LanguageSelect } from '@/components/LanguageSelect'
 import { PageLoader } from '@/components/PageLoader'
 import { ModeToggle } from '@/components/theme/ModeToggle'
-import { buttonVariants } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { useAuth } from '@/features/auth/useAuth'
 
 // `buttonVariants` è la funzione (generata con class-variance-authority) che
 // produce le classi di `Button` per una variante. Applicata a un `NavLink`, dà
@@ -20,6 +22,8 @@ function navLinkClass({ isActive }: { isActive: boolean }): string {
 // di `<router-outlet>` in Angular.
 export function Layout() {
   const { t } = useTranslation()
+  const { status, user, signOut } = useAuth()
+  const isAuthenticated = status === 'authenticated'
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -28,28 +32,43 @@ export function Layout() {
           <Link to="/" className="font-heading text-xl font-semibold">
             {t('appName')}
           </Link>
-          <div className="flex items-center gap-2">
-            <nav aria-label={t('nav.label')}>
-              <ul className="flex gap-1">
-                <li>
-                  {/*
-                    `end` fa sì che "/" sia attivo solo sulla home e non su ogni
-                    URL che inizia con "/": ≈ `[routerLinkActiveOptions]="{ exact: true }"`.
-                    NavLink aggiunge anche `aria-current="page"` al link attivo.
-                  */}
-                  <NavLink to="/" end className={navLinkClass}>
-                    {t('nav.trips')}
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink to="/trips/new" className={navLinkClass}>
-                    {t('nav.newTrip')}
-                  </NavLink>
-                </li>
-              </ul>
-            </nav>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Navigazione e logout solo da autenticati (≈ `@if (auth.isLoggedIn())`). */}
+            {isAuthenticated && (
+              <nav aria-label={t('nav.label')}>
+                <ul className="flex gap-1">
+                  <li>
+                    {/*
+                      `end` fa sì che "/" sia attivo solo sulla home e non su ogni
+                      URL che inizia con "/": ≈ `[routerLinkActiveOptions]="{ exact: true }"`.
+                      NavLink aggiunge anche `aria-current="page"` al link attivo.
+                    */}
+                    <NavLink to="/" end className={navLinkClass}>
+                      {t('nav.trips')}
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink to="/trips/new" className={navLinkClass}>
+                      {t('nav.newTrip')}
+                    </NavLink>
+                  </li>
+                </ul>
+              </nav>
+            )}
             <LanguageSelect />
             <ModeToggle />
+            {isAuthenticated && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void signOut()}
+                title={t('nav.signedInAs', { email: user?.email ?? '' })}
+              >
+                {/* Dopo il logout arriva SIGNED_OUT: RequireAuth porta a /login. */}
+                <LogOut />
+                {t('nav.logout')}
+              </Button>
+            )}
           </div>
         </div>
       </header>

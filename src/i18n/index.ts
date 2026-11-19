@@ -1,8 +1,10 @@
 import i18n from 'i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 import { initReactI18next } from 'react-i18next'
+import { auth as enAuth } from '@/i18n/locales/en/auth'
 import { common as enCommon } from '@/i18n/locales/en/common'
 import { trips as enTrips } from '@/i18n/locales/en/trips'
+import { auth as itAuth } from '@/i18n/locales/it/auth'
 import { common as itCommon } from '@/i18n/locales/it/common'
 import { trips as itTrips } from '@/i18n/locales/it/trips'
 
@@ -15,8 +17,8 @@ export const SUPPORTED_LANGUAGES = ['en', 'it'] as const
 export type Language = (typeof SUPPORTED_LANGUAGES)[number]
 
 export const resources = {
-  en: { common: enCommon, trips: enTrips },
-  it: { common: itCommon, trips: itTrips },
+  en: { common: enCommon, trips: enTrips, auth: enAuth },
+  it: { common: itCommon, trips: itTrips, auth: itAuth },
 } as const
 
 // Tiene `<html lang>` allineato alla lingua attiva: lo usano screen reader,
@@ -39,7 +41,7 @@ void i18n
     fallbackLng: 'en',
     // 'it-IT' → 'it': usiamo solo il codice della lingua, non la regione.
     load: 'languageOnly',
-    ns: ['common', 'trips'],
+    ns: ['common', 'trips', 'auth'],
     defaultNS: 'common',
     interpolation: {
       // React fa già l'escape dei valori inseriti nel JSX.

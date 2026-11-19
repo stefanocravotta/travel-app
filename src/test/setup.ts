@@ -5,13 +5,24 @@
 // `toHaveValue`, `toBeChecked`, `toHaveAttribute`, …
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
-import { afterEach, beforeEach } from 'vitest'
+import { afterEach, beforeEach, vi } from 'vitest'
 // Stessa configurazione i18n dell'app (traduzioni, namespace, chiavi tipizzate).
 import i18n from '@/i18n'
+import { resetSupabaseMock } from '@/test/supabaseMock'
+
+// In tutti i test il client Supabase è sostituito dal mock: nessuna chiamata
+// di rete e nessun bisogno di variabili d'ambiente. `vi.mock` in un setup
+// file vale per ogni file di test.
+vi.mock('@/lib/supabase', async () => {
+  const { supabaseMock } = await import('@/test/supabaseMock')
+  return { supabase: supabaseMock }
+})
 
 // Ogni test parte in inglese, indipendentemente dalla lingua di jsdom o da
-// un `changeLanguage` fatto in un test precedente.
+// un `changeLanguage` fatto in un test precedente, e con il mock di Supabase
+// ripulito (sessione iniziale: nessun utente).
 beforeEach(async () => {
+  resetSupabaseMock()
   await i18n.changeLanguage('en')
 })
 

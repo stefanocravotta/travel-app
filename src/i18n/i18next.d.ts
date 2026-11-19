@@ -1,4 +1,5 @@
 import 'i18next'
+import type { auth } from '@/i18n/locales/en/auth'
 import type { common } from '@/i18n/locales/en/common'
 import type { trips } from '@/i18n/locales/en/trips'
 
@@ -11,6 +12,7 @@ declare module 'i18next' {
     resources: {
       common: typeof common
       trips: typeof trips
+      auth: typeof auth
     }
   }
 }

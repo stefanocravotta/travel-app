@@ -2,6 +2,7 @@ import { lazy } from 'react'
 import { createBrowserRouter } from 'react-router'
 import type { RouteObject } from 'react-router'
 import { Layout } from '@/components/Layout'
+import { RequireAuth } from '@/features/auth/components/RequireAuth'
 
 // --- Pagine caricate in lazy (code splitting) ---
 // `import()` dinamico: Vite mette ogni pagina (e il codice usato solo da lei)
@@ -31,6 +32,12 @@ const TripDetailPage = lazy(() =>
 const NotFoundPage = lazy(() =>
   import('@/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })),
 )
+const LoginPage = lazy(() =>
+  import('@/pages/LoginPage').then((m) => ({ default: m.LoginPage })),
+)
+const RegisterPage = lazy(() =>
+  import('@/pages/RegisterPage').then((m) => ({ default: m.RegisterPage })),
+)
 
 // Configurazione delle route in "data mode": un array di oggetti definito
 // fuori dai componenti, come l'array `Routes` passato a `provideRouter(routes)`
@@ -45,14 +52,28 @@ export const routes: RouteObject[] = [
     path: '/',
     Component: Layout,
     children: [
-      // `index: true` = la route figlia mostrata sul path esatto del padre
-      // (≈ `{ path: '', component: TripsPage }` in Angular).
-      { index: true, Component: TripsPage },
-      // `trips/new` e `trips/:id` non vanno in conflitto: React Router
-      // classifica le route e i segmenti statici vincono su quelli dinamici,
-      // indipendentemente dall'ordine (in Angular invece conta l'ordine).
-      { path: 'trips/new', Component: NewTripPage },
-      { path: 'trips/:id', Component: TripDetailPage },
+      // --- Rotte pubbliche ---
+      { path: 'login', Component: LoginPage },
+      { path: 'register', Component: RegisterPage },
+
+      // --- Rotte private ---
+      // Route di layout senza `path`: non aggiunge segmenti all'URL, fa solo
+      // da "guard" per le figlie (≈ `canActivate: [authGuard]` su un gruppo
+      // di route in Angular). Vedi RequireAuth.tsx.
+      {
+        Component: RequireAuth,
+        children: [
+          // `index: true` = la route figlia mostrata sul path esatto del padre
+          // (≈ `{ path: '', component: TripsPage }` in Angular).
+          { index: true, Component: TripsPage },
+          // `trips/new` e `trips/:id` non vanno in conflitto: React Router
+          // classifica le route e i segmenti statici vincono su quelli dinamici,
+          // indipendentemente dall'ordine (in Angular invece conta l'ordine).
+          { path: 'trips/new', Component: NewTripPage },
+          { path: 'trips/:id', Component: TripDetailPage },
+        ],
+      },
+
       // `*` cattura qualsiasi URL non gestito: ≈ `{ path: '**' }`.
       // Essendo figlia del Layout, la 404 mantiene header e navigazione.
       { path: '*', Component: NotFoundPage },

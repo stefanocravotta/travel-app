@@ -8,6 +8,8 @@ export const common = {
     label: 'Navigazione principale',
     trips: 'Viaggi',
     newTrip: 'Nuovo viaggio',
+    logout: 'Esci',
+    signedInAs: 'Accesso effettuato come {{email}}',
   },
   theme: {
     toggle: 'Cambia tema chiaro/scuro',
