@@ -26,6 +26,23 @@ if (!('ResizeObserver' in globalThis)) {
   }
 }
 
+// jsdom non implementa neanche `matchMedia`, usato da ThemeProvider per
+// `prefers-color-scheme`. Lo stub risponde sempre "nessuna corrispondenza"
+// (tema chiaro) e accetta i listener senza mai chiamarli.
+// (In jsdom la proprietà esiste ma non è una funzione: serve `typeof`.)
+if (typeof window.matchMedia !== 'function') {
+  window.matchMedia = (query: string): MediaQueryList => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    dispatchEvent: () => false,
+  })
+}
+
 // Smonta i componenti renderizzati dopo ogni test, così ogni test parte da un
 // DOM vuoto. Testing Library lo fa da sola solo con `globals: true`; noi
 // importiamo esplicitamente le API di Vitest, quindi lo registriamo qui.

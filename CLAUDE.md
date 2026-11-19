@@ -35,6 +35,7 @@ Travel planning app with AI-generated itineraries. Learning project: the develop
 - Custom hooks in `src/hooks/`, named `useXxx`
 - Feature-based folders: `src/features/<feature>/`
 - Shared UI in `src/components/`
+- Route pages live in `src/pages/` and are registered in `src/router.ts` with `React.lazy` (one chunk per page); the `<Suspense>` in `Layout` shows `PageLoader` while a page loads. Keep always-visible UI (layout, header) eager.
 - Import alias `@/` → `src/` (configured in `tsconfig.json`, `tsconfig.app.json` and `vite.config.ts`). Use `@/...` instead of `../` paths; `./` only for files in the same folder.
 - **Use the shadcn components in `src/components/ui` before creating new ones.** If one is missing, add it with `npx shadcn@latest add <name>` instead of writing it by hand; avoid editing generated files unless necessary.
 - Use theme tokens (`bg-background`, `text-muted-foreground`, `text-destructive`, `border`, …) instead of fixed colors (`gray-*`, `blue-*`), so light and dark both work.
