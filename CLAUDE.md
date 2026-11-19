@@ -50,3 +50,10 @@ Travel planning app with AI-generated itineraries. Learning project: the develop
 - When you introduce a React concept, relate it to the Angular equivalent when useful.
 - Keep changes small. Run `npm run lint`, `npm test` and `npm run build` before saying a task is done.
 - Never commit or push unless I ask.
+
+## Git workflow (GitHub Flow)
+
+- `main` is protected (GitHub ruleset): no direct pushes, no force pushes; merges only through a PR with the CI check "Lint, test, build" green.
+- Every task goes on its own branch created from an up-to-date `main`: `feat/…`, `fix/…`, `chore/…`, `docs/…`, `refactor/…`, `test/…`.
+- Close every task with a PR opened via `gh pr create` (English title in conventional-commit style, body with summary and test plan).
+- Merge with squash (`gh pr merge --squash --delete-branch`) only after CI is green, then `git switch main && git pull`.
