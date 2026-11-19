@@ -5,6 +5,8 @@ import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router/dom'
 import { ThemeProvider } from '@/components/theme/ThemeProvider'
 import { TripsProvider } from '@/features/trips/TripsProvider'
+// Inizializza i18next (lingua rilevata + traduzioni) prima del primo render.
+import '@/i18n'
 import '@/index.css'
 import { router } from '@/router'
 

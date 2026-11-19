@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import {
   Card,
@@ -31,13 +32,19 @@ type TripListProps = {
 // e aggiorna il DOM con le differenze: è il suo modo di fare quello che in
 // Angular fa la change detection.
 export function TripList({ trips }: TripListProps) {
+  // `useTranslation('trips')` dà la funzione `t` per il namespace "trips"
+  // (≈ la pipe `translate`) e l'istanza `i18n` (lingua attiva). Il componente
+  // si ri-renderizza da solo quando cambia la lingua.
+  const { t, i18n } = useTranslation('trips')
+  const locale = i18n.resolvedLanguage ?? 'en'
+
   // Rendering condizionale con un "early return": è un normale `if` di JS.
   // Equivale al ramo `@else` di un `@if (trips.length > 0) { … } @else { … }`
   // (o a `*ngIf="…; else empty"`).
   if (trips.length === 0) {
     return (
       <p className="rounded-xl border border-dashed p-6 text-center text-muted-foreground">
-        Nessun viaggio ancora. Aggiungine uno per iniziare!
+        {t('list.empty')}
       </p>
     )
   }
@@ -78,11 +85,16 @@ export function TripList({ trips }: TripListProps) {
                 </Link>
               </CardTitle>
               <CardDescription>
-                {formatDateRange(trip.startDate, trip.endDate)}
+                {formatDateRange(trip.startDate, trip.endDate, locale)}
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3">
-              <p className="font-medium">Budget: {formatBudget(trip.budget)}</p>
+              {/* Interpolazione: `{{amount}}` nella traduzione ← parametro tipizzato. */}
+              <p className="font-medium">
+                {t('list.budget', {
+                  amount: formatBudget(trip.budget, locale),
+                })}
+              </p>
 
               {/* Un `map` annidato: anche qui serve una `key`, l'interesse stesso è unico. */}
               {trip.interests.length > 0 && (
@@ -90,9 +102,11 @@ export function TripList({ trips }: TripListProps) {
                   {trip.interests.map((interest) => (
                     <li
                       key={interest}
-                      className="rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground capitalize"
+                      className="rounded-full bg-secondary px-3 py-1 text-xs text-secondary-foreground"
                     >
-                      {interest}
+                      {/* Chiave costruita da un valore tipizzato: TypeScript
+                          verifica che `interests.<valore>` esista. */}
+                      {t(`interests.${interest}`)}
                     </li>
                   ))}
                 </ul>
