@@ -4,6 +4,7 @@ Travel planning app with AI-generated itineraries. Learning project: the develop
 (experienced in Angular) is learning React. Code quality matters more than speed.
 
 ## Stack
+
 - Vite + React + TypeScript (strict)
 - Tailwind CSS
 - React Router, TanStack Query (to add later)
@@ -12,11 +13,14 @@ Travel planning app with AI-generated itineraries. Learning project: the develop
 - Supabase (auth, Postgres, Edge Functions) — AI calls ONLY from Edge Functions, never expose API keys in the client
 
 ## Commands
+
 - `npm run dev` — dev server
 - `npm run build` — type-check + build
 - `npm run lint` — ESLint
+- `npm run format` — Prettier (write); `npm run format:check` — Prettier (check only)
 
 ## Conventions
+
 - Functional components + hooks only, no class components
 - One component per file, PascalCase file names (`TripForm.tsx`)
 - Custom hooks in `src/hooks/`, named `useXxx`
@@ -27,6 +31,7 @@ Travel planning app with AI-generated itineraries. Learning project: the develop
 - Conventional commits (`feat:`, `fix:`, `chore:`, `refactor:`, `test:`)
 
 ## How to work with me
+
 - This is a learning project: before changing code, briefly explain the plan and why.
 - Do NOT write core components, hooks or state logic unless I explicitly ask.
   Prefer reviewing my code, pointing out issues and suggesting improvements.
