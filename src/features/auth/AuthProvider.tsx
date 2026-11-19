@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
+import { useQueryClient } from '@tanstack/react-query'
 import { AuthContext } from '@/features/auth/AuthContext'
 import type { AuthStatus } from '@/features/auth/AuthContext'
 import { toAuthErrorKey } from '@/features/auth/authErrors'
@@ -16,6 +17,9 @@ type AuthProviderProps = {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null>(null)
   const [status, setStatus] = useState<AuthStatus>('loading')
+  // Cache delle query (TanStack Query): AuthProvider sta dentro
+  // QueryClientProvider, vedi main.tsx.
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     // `onAuthStateChange` è l'unica fonte di verità della sessione: emette
@@ -23,7 +27,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // SIGNED_IN / SIGNED_OUT / TOKEN_REFRESHED… a ogni cambiamento, anche da
     // altre schede. Non serve quindi chiamare `getSession()` all'avvio.
     // Il callback è sincrono e aggiorna solo lo stato React.
-    const { data } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data } = supabase.auth.onAuthStateChange((event, newSession) => {
+      // Al logout svuotiamo la cache: i viaggi dell'utente uscito non devono
+      // comparire, nemmeno per un istante, a chi accede dopo.
+      if (event === 'SIGNED_OUT') {
+        queryClient.clear()
+      }
       setSession(newSession)
       setStatus(newSession ? 'authenticated' : 'unauthenticated')
     })
@@ -31,7 +40,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Cleanup: chiude la sottoscrizione quando il provider viene smontato
     // (≈ `takeUntilDestroyed()` / `unsubscribe()` in `ngOnDestroy`).
     return () => data.subscription.unsubscribe()
-  }, [])
+  }, [queryClient])
 
   // I metodi non aggiornano lo stato direttamente: in caso di successo
   // Supabase emette l'evento e il listener qui sopra fa il resto.

@@ -33,3 +33,11 @@ export type Trip = {
   // Un viaggio può avere più interessi, quindi è un array di `Interest`.
   interests: Interest[]
 }
+
+// Dati per creare un viaggio: l'`id` (e il proprietario) li assegna il database.
+export type NewTrip = Omit<Trip, 'id'>
+
+// Type guard: restringe una stringa qualsiasi (es. dal database) a `Interest`.
+export function isInterest(value: string): value is Interest {
+  return (INTERESTS as readonly string[]).includes(value)
+}

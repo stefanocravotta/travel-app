@@ -1,16 +1,20 @@
 import { Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
+import { PageLoader } from '@/components/PageLoader'
+import { QueryError } from '@/components/QueryError'
 import { Button } from '@/components/ui/button'
 import { TripList } from '@/features/trips/components/TripList'
-import { useTrips } from '@/features/trips/useTrips'
+import { useTripsQuery } from '@/features/trips/queries'
 
 // Pagina = componente associato a una route (come un componente in
-// `Routes` di Angular). Prende i dati dal context con il custom hook e li
-// passa al componente presentazionale TripList.
+// `Routes` di Angular). Prende i dati dal server con un query hook e li passa
+// al componente presentazionale TripList.
 export function TripsPage() {
   const { t } = useTranslation('trips')
-  const { trips } = useTrips()
+  // Tre stati da gestire esplicitamente (≈ `@if (trips$ | async; as trips)`
+  // più i rami di caricamento ed errore che in Angular scriveresti a mano).
+  const { data: trips, isPending, isError, refetch } = useTripsQuery()
 
   return (
     <>
@@ -28,7 +32,18 @@ export function TripsPage() {
           </Link>
         </Button>
       </div>
-      <TripList trips={trips} />
+
+      {isPending ? (
+        // Primo caricamento: nessun dato in cache.
+        <PageLoader />
+      ) : isError ? (
+        <QueryError
+          message={t('list.loadError')}
+          onRetry={() => void refetch()}
+        />
+      ) : (
+        <TripList trips={trips} />
+      )}
     </>
   )
 }

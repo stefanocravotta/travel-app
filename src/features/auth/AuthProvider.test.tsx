@@ -1,7 +1,11 @@
 import { render, screen } from '@testing-library/react'
+import { QueryClientProvider } from '@tanstack/react-query'
+import type { QueryClient } from '@tanstack/react-query'
+import type { ReactNode } from 'react'
 import { describe, expect, it } from 'vitest'
 import { AuthProvider } from '@/features/auth/AuthProvider'
 import { useAuth } from '@/features/auth/useAuth'
+import { createTestQueryClient } from '@/test/renderApp'
 import {
   emitAuthChange,
   fakeAuthError,
@@ -23,12 +27,22 @@ function AuthProbe() {
   )
 }
 
-function renderProvider() {
-  return render(
-    <AuthProvider>
-      <AuthProbe />
-    </AuthProvider>,
+// AuthProvider usa la cache di TanStack Query (la svuota al logout), quindi
+// va renderizzato dentro un QueryClientProvider, come in main.tsx.
+function renderWithProviders(
+  children: ReactNode,
+  queryClient: QueryClient = createTestQueryClient(),
+) {
+  const result = render(
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>{children}</AuthProvider>
+    </QueryClientProvider>,
   )
+  return { ...result, queryClient }
+}
+
+function renderProvider(queryClient?: QueryClient) {
+  return renderWithProviders(<AuthProbe />, queryClient)
 }
 
 describe('AuthProvider', () => {
@@ -64,6 +78,17 @@ describe('AuthProvider', () => {
     expect(screen.getByText('unauthenticated:none')).toBeInTheDocument()
   })
 
+  it('al logout svuota la cache delle query', () => {
+    setInitialSession(fakeSession())
+    const { queryClient } = renderProvider()
+    queryClient.setQueryData(['trips', 'list'], [{ id: 'trip-1' }])
+
+    emitAuthChange('SIGNED_OUT', null)
+
+    // I dati dell'utente uscito non restano disponibili per il prossimo.
+    expect(queryClient.getQueryData(['trips', 'list'])).toBeUndefined()
+  })
+
   it('chiude la sottoscrizione quando viene smontato', () => {
     const { unmount } = renderProvider()
     expect(supabaseMock.auth.onAuthStateChange).toHaveBeenCalledOnce()
@@ -93,11 +118,7 @@ describe('AuthProvider', () => {
         </button>
       )
     }
-    render(
-      <AuthProvider>
-        <SignInProbe />
-      </AuthProvider>,
-    )
+    renderWithProviders(<SignInProbe />)
 
     screen.getByRole('button').click()
 

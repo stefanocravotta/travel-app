@@ -7,11 +7,14 @@ export const trips = {
     newTrip: 'Nuovo viaggio',
     empty: 'Nessun viaggio ancora. Aggiungine uno per iniziare!',
     budget: 'Budget: {{amount}}',
+    loadError: 'Impossibile caricare i tuoi viaggi.',
   },
   newTrip: {
     title: 'Nuovo viaggio',
+    saveError: 'Impossibile salvare il viaggio. Riprova.',
   },
   detail: {
+    loadError: 'Impossibile caricare questo viaggio.',
     notFoundTitle: 'Viaggio non trovato',
     notFoundDescription: 'Il viaggio che cerchi non esiste o è stato rimosso.',
     back: 'Torna ai viaggi',
@@ -27,6 +30,7 @@ export const trips = {
     budget: 'Budget (€)',
     interests: 'Interessi',
     submit: 'Aggiungi viaggio',
+    submitting: 'Salvataggio…',
     errors: {
       destinationRequired: 'La destinazione è obbligatoria.',
       startDateRequired: 'La data di inizio è obbligatoria.',

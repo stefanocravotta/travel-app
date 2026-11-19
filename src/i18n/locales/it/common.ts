@@ -4,6 +4,7 @@ import type { TranslationShape } from '@/i18n/types'
 export const common = {
   appName: 'Travel App',
   loading: 'Caricamento…',
+  retry: 'Riprova',
   nav: {
     label: 'Navigazione principale',
     trips: 'Viaggi',

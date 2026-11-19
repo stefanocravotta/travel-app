@@ -3,6 +3,7 @@
 export const common = {
   appName: 'Travel App',
   loading: 'Loading…',
+  retry: 'Try again',
   nav: {
     label: 'Main navigation',
     trips: 'Trips',

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/database.types'
 import { readSupabaseConfig } from '@/lib/supabaseConfig'
 
 // Unica istanza del client Supabase per tutta l'app (un singleton di modulo):
@@ -9,4 +10,6 @@ import { readSupabaseConfig } from '@/lib/supabaseConfig'
 // Nei test questo modulo è sostituito da un mock (vedi src/test/setup.ts).
 const { url, publishableKey } = readSupabaseConfig(import.meta.env)
 
-export const supabase = createClient(url, publishableKey)
+// `<Database>`: i tipi generati dal database (`npm run db:types`) rendono
+// tipizzate tabelle, colonne e risultati delle query.
+export const supabase = createClient<Database>(url, publishableKey)
