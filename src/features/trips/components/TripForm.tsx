@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { ValidationErrorKey } from '@/i18n/locales/en/trips'
 import { INTERESTS } from '@/types/trip'
-import type { Interest, Trip } from '@/types/trip'
+import type { Interest, NewTrip } from '@/types/trip'
 
 // --- Validazione ---
 // In Angular useresti i Reactive Forms con `Validators.required` e un validator
@@ -75,10 +75,13 @@ const fieldClass = 'grid gap-2'
 // `onCreate` è una prop di tipo funzione: è il modo in cui il figlio comunica
 // con il padre. Equivale a un `@Output() create = new EventEmitter<Trip>()`
 // (o a `output<Trip>()`): invece di fare `this.create.emit(trip)` il figlio
-// chiama `onCreate(trip)`, e il padre decide cosa fare (qui: aggiornare lo stato).
+// chiama `onCreate(trip)`, e il padre decide cosa fare (qui: salvarlo sul server).
 // Per convenzione le prop-evento iniziano con `on`.
+// Può restituire una Promise: il form la aspetta, mostra lo stato "in
+// salvataggio" e si svuota solo se va a buon fine. Se viene rifiutata, i dati
+// restano nei campi e il padre mostra l'errore.
 type TripFormProps = {
-  onCreate: (trip: Trip) => void
+  onCreate: (trip: NewTrip) => Promise<void> | void
 }
 
 export function TripForm({ onCreate }: TripFormProps) {
@@ -99,6 +102,8 @@ export function TripForm({ onCreate }: TripFormProps) {
   // tipo degli elementi.
   const [interests, setInterests] = useState<Interest[]>([])
   const [errors, setErrors] = useState<FormErrors>({})
+  // Vero mentre `onCreate` è in corso: disabilita il bottone (niente doppi invii).
+  const [submitting, setSubmitting] = useState(false)
 
   function setInterest(interest: Interest, checked: boolean) {
     // Aggiornamento funzionale: passiamo al setter una funzione che riceve il
@@ -118,7 +123,7 @@ export function TripForm({ onCreate }: TripFormProps) {
   // `onSubmit` sul form ≈ `(ngSubmit)` in Angular. Differenza: Angular blocca
   // da solo il comportamento nativo (il ricaricamento della pagina), in React
   // va fatto a mano con `preventDefault()`.
-  function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
+  async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault()
 
     const newErrors = validate({ destination, startDate, endDate, budget })
@@ -127,14 +132,23 @@ export function TripForm({ onCreate }: TripFormProps) {
       return
     }
 
-    onCreate({
-      id: crypto.randomUUID(),
-      destination: destination.trim(),
-      startDate,
-      endDate,
-      budget: Number(budget),
-      interests,
-    })
+    setSubmitting(true)
+    try {
+      // L'id non lo generiamo più qui: lo assegna il database.
+      await onCreate({
+        destination: destination.trim(),
+        startDate,
+        endDate,
+        budget: Number(budget),
+        interests,
+      })
+    } catch {
+      // Salvataggio fallito: l'errore lo mostra il padre; qui teniamo i dati
+      // inseriti, così l'utente può riprovare senza riscriverli.
+      return
+    } finally {
+      setSubmitting(false)
+    }
 
     // Reset: in React non esiste un `form.reset()` da chiamare, il form è
     // lo stato. Basta rimettere ogni stato al suo valore iniziale e gli input
@@ -291,7 +305,9 @@ export function TripForm({ onCreate }: TripFormProps) {
         </CardContent>
 
         <CardFooter>
-          <Button type="submit">{t('form.submit')}</Button>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? t('form.submitting') : t('form.submit')}
+          </Button>
         </CardFooter>
       </form>
     </Card>

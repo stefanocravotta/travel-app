@@ -144,9 +144,8 @@ describe('TripForm', () => {
       await user.click(fields.submit)
 
       expect(onCreate).toHaveBeenCalledOnce()
+      // Esattamente questi campi: niente `id`, lo assegna il database.
       expect(onCreate).toHaveBeenCalledWith({
-        // L'id è generato con `crypto.randomUUID()`: verifichiamo solo il tipo.
-        id: expect.any(String),
         destination: 'Roma', // senza spazi ai lati
         startDate: '2026-05-10',
         endDate: '2026-05-15',
@@ -190,6 +189,50 @@ describe('TripForm', () => {
       expect(onCreate).toHaveBeenCalledWith(
         expect.objectContaining({ interests: [] }),
       )
+    })
+
+    it('mentre il salvataggio è in corso disabilita il bottone', async () => {
+      const { onCreate, user, fields } = setup()
+      // Promise che risolviamo noi: simula una richiesta ancora in corso.
+      let finish: () => void = () => {}
+      onCreate.mockReturnValue(
+        new Promise<void>((resolve) => {
+          finish = resolve
+        }),
+      )
+
+      await user.type(fields.destination, 'Roma')
+      await user.type(fields.startDate, '2026-05-10')
+      await user.type(fields.endDate, '2026-05-12')
+      await user.type(fields.budget, '300')
+      await user.click(fields.submit)
+
+      const saving = screen.getByRole('button', { name: t('form.submitting') })
+      expect(saving).toBeDisabled()
+
+      await act(async () => finish())
+      expect(
+        screen.getByRole('button', { name: t('form.submit') }),
+      ).toBeEnabled()
+    })
+
+    it('se il salvataggio fallisce non svuota i campi', async () => {
+      const { onCreate, user, fields } = setup()
+      onCreate.mockRejectedValue(new Error('network down'))
+
+      await user.type(fields.destination, 'Roma')
+      await user.type(fields.startDate, '2026-05-10')
+      await user.type(fields.endDate, '2026-05-12')
+      await user.type(fields.budget, '300')
+      await user.click(fields.submit)
+
+      expect(onCreate).toHaveBeenCalledOnce()
+      // L'utente può riprovare senza riscrivere nulla.
+      expect(fields.destination).toHaveValue('Roma')
+      expect(fields.budget).toHaveValue(300)
+      expect(
+        screen.getByRole('button', { name: t('form.submit') }),
+      ).toBeEnabled()
     })
   })
 

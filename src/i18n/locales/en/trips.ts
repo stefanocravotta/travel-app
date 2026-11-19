@@ -6,11 +6,14 @@ export const trips = {
     newTrip: 'New trip',
     empty: 'No trips yet. Add one to get started!',
     budget: 'Budget: {{amount}}',
+    loadError: "Couldn't load your trips.",
   },
   newTrip: {
     title: 'New trip',
+    saveError: "Couldn't save the trip. Please try again.",
   },
   detail: {
+    loadError: "Couldn't load this trip.",
     notFoundTitle: 'Trip not found',
     notFoundDescription:
       "The trip you're looking for doesn't exist or has been removed.",
@@ -27,6 +30,7 @@ export const trips = {
     budget: 'Budget (€)',
     interests: 'Interests',
     submit: 'Add trip',
+    submitting: 'Saving…',
     errors: {
       destinationRequired: 'Destination is required.',
       startDateRequired: 'Start date is required.',

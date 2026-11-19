@@ -1,6 +1,8 @@
 import { ArrowLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router'
+import { PageLoader } from '@/components/PageLoader'
+import { QueryError } from '@/components/QueryError'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -10,7 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { formatBudget, formatDateRange } from '@/features/trips/format'
-import { useTrips } from '@/features/trips/useTrips'
+import { isTripId, useTripQuery } from '@/features/trips/queries'
 
 export function TripDetailPage() {
   const { t, i18n } = useTranslation('trips')
@@ -21,11 +23,9 @@ export function TripDetailPage() {
   // con `withComponentInputBinding()`. Qui non serve un Observable: quando
   // l'URL cambia, il componente si ri-renderizza e `useParams` dà il nuovo valore.
   const { id } = useParams()
-  const { trips } = useTrips()
-
-  // Dato derivato: si calcola durante il render, non serve uno stato a parte
-  // (≈ un `computed()` in Angular).
-  const trip = trips.find((t) => t.id === id)
+  // La query ha come chiave l'id: cambiando URL si carica (o si prende dalla
+  // cache) il viaggio giusto, senza gestire a mano la sottoscrizione.
+  const { data: trip, isPending, isError, refetch } = useTripQuery(id)
 
   // `asChild` (pattern "Slot" di Radix): Button non rende il suo `<button>` ma
   // passa stile e props al figlio, qui un `Link`. Risultato: un `<a>` con
@@ -40,7 +40,26 @@ export function TripDetailPage() {
     </Button>
   )
 
-  if (trip === undefined) {
+  // Con un id non valido la query è disabilitata (resta "pending" per
+  // sempre): lo trattiamo subito come "non trovato".
+  if (isTripId(id) && isPending) {
+    return <PageLoader />
+  }
+
+  if (isError) {
+    return (
+      <div className="grid justify-items-start gap-4">
+        {backLink}
+        <QueryError
+          message={t('detail.loadError')}
+          onRetry={() => void refetch()}
+        />
+      </div>
+    )
+  }
+
+  // `null` = non esiste o non è dell'utente (la RLS lo nasconde).
+  if (!trip) {
     return (
       <div className="grid justify-items-center gap-2 rounded-xl border border-dashed p-6 text-center">
         <h1 className="font-heading text-2xl font-semibold">

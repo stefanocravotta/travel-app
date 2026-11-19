@@ -11,7 +11,7 @@ Travel planning app with AI-generated itineraries. Learning project: the develop
 - React Router v8 (data mode: `createBrowserRouter` in `src/router.ts`; import from `react-router`, `RouterProvider` from `react-router/dom`)
 - i18n: react-i18next + i18next-browser-languagedetector, setup in `src/i18n/index.ts`. Languages `en` (fallback, source of truth) and `it`; namespaces `common`, `trips` and `auth` in `src/i18n/locales/<lang>/<ns>.ts`; typed keys via `src/i18n/i18next.d.ts`. Language detected from the browser, choice saved in localStorage (`travel-app:lang`)
 - Deploy: Vercel (`vercel.json` rewrites all routes to `/index.html` for client-side routing)
-- TanStack Query (to add later)
+- TanStack Query v5 for all server data: `QueryClient` in `src/lib/queryClient.ts`, provided in `main.tsx` above `AuthProvider` (the cache is cleared on `SIGNED_OUT`)
 - React Hook Form + Zod (to add later)
 - Vitest + Testing Library (jsdom; setup in `src/test/setup.ts`); Playwright (to add later)
 - Git hooks: husky + lint-staged (pre-commit in `.husky/pre-commit` runs ESLint `--fix` + Prettier on staged files)
@@ -19,7 +19,8 @@ Travel planning app with AI-generated itineraries. Learning project: the develop
 - Supabase (auth, Postgres, Edge Functions) — AI calls ONLY from Edge Functions, never expose API keys in the client
   - Client: `src/lib/supabase.ts` (singleton), config read and validated by `src/lib/supabaseConfig.ts` from `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY`. Missing vars throw a clear error at startup.
   - Auth (email + password, active): `src/features/auth/` — `AuthProvider` (state from `onAuthStateChange` only), `useAuth()`, `RequireAuth` (route guard), `LoginForm`/`RegisterForm`; pages `/login`, `/register`. Sign-out uses `{ scope: 'local' }`.
-  - Trips are still stored in localStorage (not per user yet).
+  - Database: table `public.trips` with Row Level Security (owner-only, one policy per operation). Schema lives in `supabase/migrations/` (Supabase CLI 3.2.0, devDependency, used via `npx supabase`; no Docker, so always target `--remote`). Generated types in `src/lib/database.types.ts` (do not edit by hand).
+  - Trips data: `src/features/trips/api.ts` (Supabase calls + row ↔ domain mapping) and `src/features/trips/queries.ts` (`tripKeys`, `useTripsQuery`, `useTripQuery`, `useCreateTripMutation`).
 
 ## Setup
 
@@ -36,6 +37,10 @@ Travel planning app with AI-generated itineraries. Learning project: the develop
 - `npm test` — run the Vitest suite once (used by CI)
 - `npm run test:watch` — Vitest in watch mode
 - Pre-commit hook (automatic): `lint-staged` runs ESLint + Prettier on staged files
+- `npm run db:new <name>` — create an empty migration in `supabase/migrations/`
+- `npm run db:push` — apply pending migrations to the linked remote project (`supabase db push --remote`; try `npx supabase db push --remote --dry-run` first)
+- `npm run db:types` — regenerate `src/lib/database.types.ts` from the remote schema (run after every migration)
+- One-time CLI setup (per machine): `npx supabase login`, then `npx supabase link --project-ref <ref>`
 
 ## Conventions
 
@@ -52,9 +57,13 @@ Travel planning app with AI-generated itineraries. Learning project: the develop
 - Logic returns translation keys, not text (e.g. `validate()` returns `ValidationErrorKey`); components translate at render time.
 - Format dates and numbers with `Intl` in the active language (`i18n.resolvedLanguage`), via the helpers in `src/features/trips/format.ts`; never hardcode a locale.
 - Private pages go under the `RequireAuth` layout route in `src/router.ts`; public ones (login, register, 404) stay outside it. After login, the user returns to the page saved in the navigation `state` (`getRedirectTarget`).
+- **Database changes only through migrations** (`npm run db:new`), never from the Supabase dashboard (Table Editor/SQL editor), or the repo and the remote schema drift. After each migration: `npm run db:push`, then `npm run db:types`, and commit both.
+- Every new table: RLS enabled, `revoke all … from anon`, one policy per operation `to authenticated` using `(select auth.uid()) = user_id`, index on `user_id`. Mirror client-side validation with `check` constraints.
+- **Server data only through query hooks** (`useQuery`/`useMutation` in `src/features/<feature>/queries.ts`); components never call `supabase` or `api.ts` directly. Use the query-key factory (e.g. `tripKeys`), and invalidate affected keys in mutation `onSuccess`. Handle `isPending` (`PageLoader`) and `isError` (`QueryError` with retry) explicitly.
+- Map database rows (snake_case, generated types) to domain types (camelCase, `src/types/`) inside `api.ts`.
 - Map Supabase errors to i18n keys by `error.code` (`src/features/auth/authErrors.ts`), never show `error.message` to users.
 - Tests run in English (`src/test/setup.ts`); get expected strings with `i18n.getFixedT('en', '<ns>')`.
-- Supabase is always mocked in tests (`src/test/supabaseMock.ts`, wired globally in `setup.ts`): use `setInitialSession()`, `emitAuthChange()`, `fakeSession()`, `fakeAuthError()`. Render the full app at a URL with `renderApp(path)` (`src/test/renderApp.tsx`).
+- Supabase is always mocked in tests (`src/test/supabaseMock.ts`, wired globally in `setup.ts`): use `setInitialSession()`, `emitAuthChange()`, `fakeSession()`, `fakeAuthError()`. Database queries go through a fake query builder: `mockQueryResult()` / `mockQueryResultOnce()`, inspect with `queryCalls` / `callsTo()`, rows from `fakeTripRow()`, errors from `fakeDbError()`. Render the full app at a URL with `renderApp(path)` (`src/test/renderApp.tsx`, fresh `QueryClient` with `retry: false` per test).
 - Tests next to the file they test (`TripForm.test.tsx`). Query by role/label (`getByRole`, `getByLabelText`) and interact with `userEvent`; test visible behavior, not internals.
 - Types next to the code that uses them; shared types in `src/types/`
 - No `any`. Prefer explicit types for props.
